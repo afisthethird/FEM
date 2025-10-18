@@ -67,10 +67,10 @@ def compute_element_operator_coefficients(a_coef:float, b_coef:float, c_coef:flo
     | `el_op_coefs` |.....| `np.ndarray` |.....| Discretized DE operator coefficients matrix for the specified PDE and element volume |
     """
 
-    diffusion =  (-a_coef / el_vol    ) * np.array([[ 1, -1], [-1,  1]])
-    convection = ( b_coef          / 2) * np.array([[-1,  1], [-1,  1]])
-    reaction =   ( c_coef * el_vol / 6) * np.array([[ 2,  1], [ 1,  2]])
-    el_op_coefs = diffusion + convection + reaction
+    diffusion_op_coefs  = (-a_coef / el_vol    ) * np.array([[ 1, -1], [-1,  1]])
+    convection_op_coefs = ( b_coef          / 2) * np.array([[-1,  1], [-1,  1]])
+    reaction_op_coefs   = ( c_coef * el_vol / 6) * np.array([[ 2,  1], [ 1,  2]])
+    el_op_coefs = diffusion_op_coefs + convection_op_coefs + reaction_op_coefs
     return el_op_coefs
 
 
