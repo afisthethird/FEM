@@ -117,13 +117,27 @@ usr_nums_vars_per_nd = np.ones(glbl_num_nds, dtype=int) # Need to generalize to 
 glbl_nds_vars_is = gen_nds_vars_is(usr_nums_vars_per_nd, glbl_num_nds)
 glbl_num_vars = sum([curr_glbl_nd_vars_is.size for curr_glbl_nd_vars_is in glbl_nds_vars_is])
 
-# Index generation
+# Global nodal coordinate generation
 glbl_nds_crds = np.linspace(0, 1, glbl_num_els+1) # 1D, uniform spacing, x=[0,1] --- NEEDS to be generalized and combined with mesh generation
 
+# BC specification
+usr_bcs_vars_coefs_1L = np.array([0]) # Dirichlet
+usr_bcs_vars_coefs_1R = np.array([0]) # Dirichlet
+
+usr_bcs_vars_coefs_2L = np.array([0]) # Dirichlet
+usr_bcs_vars_coefs_2R = np.array([0.2/1]) # Neumann
+
+usr_bcs_vars_coefs_3L = np.array([0]) # Dirichlet
+usr_bcs_vars_coefs_3R = np.array([[5, 1, 1]]) # Robin
+
+usr_bcs_vars_coefs_4L = np.array([[5, 1, 1]]) # Robin
+usr_bcs_vars_coefs_4R = np.array([[5, 1, 1]]) # Robin
+
 # Boundary conditions --- need to automate instead of manually specifying index numbers, again, should be by user-specified region
+# Also need to update variable coefficients vector to a list (in line with custom numbers of variables per node)
 glbl_bcs = {
-    "left":  BC.create("Dirichlet", np.array([0])             , np.array([[0.0]])),
-    "right": BC.create("Dirichlet", np.array([glbl_num_nds-1]), np.array([[0.0]]))
+    "left":  BC.create("Robin", np.array([0])             , np.array([usr_bcs_vars_coefs_4L])),
+    "right": BC.create("Robin", np.array([glbl_num_nds-1]), np.array([usr_bcs_vars_coefs_4R]))
 }
 
 # FEM matrices/vectors
