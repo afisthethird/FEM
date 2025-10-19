@@ -21,18 +21,20 @@ class BoundaryCondition:
         self.nds_vars_coefs = nds_vars_coefs
     
     @classmethod
-    def create(cls, type:str, nds_is:np.ndarray, nds_vars_coefs:np.ndarray):
+    def create(cls, type:str, nds_glbl_is:np.ndarray, nds_vars_coefs:np.ndarray):
         """
         ## Purpose:
         User-facing method for creation of boundary conditions.
 
         ## Arguments:
         *Boundary condition types **must** be spelled correctly.*
+        
+        All nodes specified by `nds_glbl_is` must have the same stored variables (ex. nodes may not be a mix of those that store temperature T and pressure P). Define separate boundary condition instances in cases where you have groups of nodes with mismatched variables.
         | Name             |     | Data Type    |     | Description                                                                                                                                     |
         |:-----------------|-----|:-------------|-----|:------------------------------------------------------------------------------------------------------------------------------------------------|
         | `type`           |.....| `str`        |.....| Boundary condition type (ex. "Dirichlet")                                                                                                       |
-        | `nds_is`         |.....| `np.ndarray` |.....| Vector of node-specifying indices associated with this boundary condition                                                                       |
-        | `nds_vars_coefs` |.....| `np.ndarray` |.....| Vector of coefficients specific to boundary condition type, used to calculate nodal variable values at that boundary (num_nds, num_vars_per_nd) |
+        | `nds_glbl_is`    |.....| `np.ndarray` |.....| Vector of node-specifying indices associated with this boundary condition                                                                       |
+        | `nds_vars_coefs` |.....| `np.ndarray` |.....| Array of coefficients specific to boundary condition type, used to calculate nodal variable values at that boundary. Shape: (num_nds, num_vars_per_nd) |
 
         ## Returns:
         A BoundaryCondition subclass instance (it's complicated).
@@ -40,7 +42,7 @@ class BoundaryCondition:
 
         if type not in cls.types_registry:
             raise ValueError(f"Unknown boundary condition type: {type}")
-        return cls.types_registry[type](nds_is, nds_vars_coefs)
+        return cls.types_registry[type](nds_glbl_is, nds_vars_coefs)
 
     @abstractmethod
     def apply(self, glbl_nds_vars_is:list, glbl_op_coefs:np.ndarray, glbl_srcs:np.ndarray) -> None:
@@ -50,10 +52,11 @@ class BoundaryCondition:
 
         ## Arguments:
         Enforced arguments for boundary condition application functions are:
-        | Name            |     | Data Type    |     | Description  |
-        |:----------------|-----|:-------------|-----|:-------------|
-        | `glbl_op_coefs` |.....| `np.ndarray` |.....|              |
-        | `glbl_srcs`     |.....| `np.ndarray` |.....|              |
+        | Name               |     | Data Type    |     | Description  |
+        |:-------------------|-----|:-------------|-----|:-------------|
+        | `glbl_nds_vars_is` |.....| `list`       |.....|              |
+        | `glbl_op_coefs`    |.....| `np.ndarray` |.....|              |
+        | `glbl_srcs`        |.....| `np.ndarray` |.....|              |
 
         ## Returns:
         Nothing.
@@ -74,13 +77,14 @@ class BoundaryCondition:
 # Need to update to allow non-constant coefficients (probably supplied as sympy-created function handles?)
 # apply() will need to allow function handles as input and will also need to take nodal coordinates as input
 # also need to add support for non-hat weighting functions ):
-class Dirichlet(BoundaryCondition, type="Dirichlet"): 
+class Dirichlet(BoundaryCondition, type="Dirichlet"):  
     """
     u = const.
-    vars_coefs = [[c0], [c1], ...] for vars = [[v0], [v1], ...]
+    vars_coefs = [[c0], [c1], [c2]] to apply to all nodes with variablees [[v0], [v1], ...]
     """
     def apply(self, glbl_nds_vars_is:list, glbl_op_coefs:np.ndarray, glbl_srcs:np.ndarray):
         def apply_at_node(vars_glbl_is, vars_coefs):
+            
             for curr_var_glbl_i, curr_var_coef in zip(vars_glbl_is, vars_coefs):
                 glbl_op_coefs[curr_var_glbl_i, :              ] = 0.0 # hat weighting fn
                 glbl_op_coefs[curr_var_glbl_i, curr_var_glbl_i] = 1.0 # hat weighting fn
@@ -90,7 +94,7 @@ class Dirichlet(BoundaryCondition, type="Dirichlet"):
 class Neumann(BoundaryCondition, type="Neumann"):
     """
     u_n = const.
-    vars_coefs = [[c0], [c1], ...] for vars = [[v0], [v1], ...]
+    vars_coefs = [[c0], [c1], [c2]] to apply to all nodes with variablees [[v0], [v1], ...]
     """
     def apply(self, glbl_nds_vars_is:list, glbl_op_coefs:np.ndarray, glbl_srcs:np.ndarray):
         def apply_at_node(vars_glbl_is, vars_coefs):
