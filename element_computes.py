@@ -1,54 +1,23 @@
 # Libraries
 import numpy as np
+# Scripts
+import PYTHON.reference_elements as ref_els
 
+# drafting
+def element_operator_integrand():
 
-def compute_element_volume(el_crds:np.ndarray) -> float:
-    """
-    ## Purpose:
-    Computes the space occupied by an element, defined by its nodal coordinates.
-    - 1D & 2 nodes : line, returns length
-    - 2D & 3 nodes : triangle, returns area
-    - 3D & 4 nodes : tetrahedron, returns volume
+    # Compute operator terms for (i,j)
+    diffusion = a_coef * 
+    convection = b_coef * 
+    reaction = c_coef * 
 
-    ## Arguments:
-    *Coordinates **must** be supplied in Cartesian format.*
-    | Name          |     | Data Type    |     | Description                                                                         |
-    |:--------------|-----|:-------------|-----|:------------------------------------------------------------------------------------|
-    | `el_nds_crds` |.....| `np.ndarray` |.....| `ndarray` of nodal coordinates for an element, with shape(`num_el_nds`, `num_dims`) |
-    
-    ## Returns:
-    | Name     |     | Data Type |     | Description                                             |
-    |:---------|-----|:----------|-----|:--------------------------------------------------------|
-    | `el_vol` |.....| `float`   |.....| element volume, based on the supplied nodal coordinates |
-    """
-    
-    num_nds_per_el, num_dims = el_crds.shape
-    el_vol = None
-
-    if num_dims == 1 and num_nds_per_el == 2:
-        # 1D line element
-        x1 = el_crds[0, 0]
-        x2 = el_crds[1, 0]
-        el_vol = np.abs(x2 - x1)
-    elif num_dims == 2 and num_nds_per_el == 3:
-        # 2D triangle element
-        x1, y1 = el_crds[0]
-        x2, y2 = el_crds[1]
-        x3, y3 = el_crds[2]
-        el_vol = 0.5 * np.abs((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1))
-    elif num_dims == 3 and num_nds_per_el == 4:
-        # 3D tetrahedron element
-        a, b, c, d = el_crds
-        el_vol = np.abs(np.dot((a - d), np.cross((b - d), (c - d)))) / 6.0
-    else:
-        raise ValueError("Invalid element shape or dimensionality")
-    
-    return el_vol
+    return (-diffusion + convection + reaction) * 
 
 
 # Currently limited to 1D DEs of the form: au"+bu'+cu = f(x) ; u = u(x)
 # Currently limited to 1D hat functions
-def compute_element_operator_coefficients(a_coef:float, b_coef:float, c_coef:float, el_vol:float) -> np.ndarray:
+# messy at the moment
+def compute_element_operator_coefficients(a_coef:float, b_coef:float, c_coef:float, el_nds_crds:np.ndarray) -> np.ndarray:
     """
     ## Purpose:
     Computes the (local) discretized DE operator coefficients matrix for an element, based on its volume.
@@ -59,7 +28,6 @@ def compute_element_operator_coefficients(a_coef:float, b_coef:float, c_coef:flo
     | `a_coef` |.....| `float`   |.....| DE operator u" coefficient |
     | `b_coef` |.....| `float`   |.....| DE operator u' coefficient |
     | `c_coef` |.....| `float`   |.....| DE operator u coefficient  |
-    | `el_vol` |.....| `float`   |.....| Element volume             |
     
     ## Returns:
     | Name          |     | Data Type    |     | Description                                                                          |
@@ -67,16 +35,29 @@ def compute_element_operator_coefficients(a_coef:float, b_coef:float, c_coef:flo
     | `el_op_coefs` |.....| `np.ndarray` |.....| Discretized DE operator coefficients matrix for the specified PDE and element volume |
     """
 
-    diffusion_op_coefs  = (-a_coef / el_vol    ) * np.array([[ 1, -1], [-1,  1]])
-    convection_op_coefs = ( b_coef          / 2) * np.array([[-1,  1], [-1,  1]])
-    reaction_op_coefs   = ( c_coef * el_vol / 6) * np.array([[ 2,  1], [ 1,  2]])
-    el_op_coefs = diffusion_op_coefs + convection_op_coefs + reaction_op_coefs
+    degree = len(el_nds_crds) - 1
+    el_num_nds = degree + 1
+
+    # Initialize element operator coefficients matrix
+    el_op_coefs = np.zeros((el_num_nds, el_num_nds))
+
+    for el_op_coefs_i in range(el_num_nds):
+        for el_op_coefs_j in range(el_num_nds):
+            func = lambda xi: element_operator_integrand(xi, el_op_coefs_i, el_op_coefs_j, a_coef, b_coef, c_coef, el_nds_crds)
+            val, n_points_used = ref_els.adaptive_Gaussian_quadrature(func, np.array([[-1], [1]]))
+            el_op_coefs[el_op_coefs_i, el_op_coefs_j] = val
+    
     return el_op_coefs
 
+# drafting
+def element_sources_integrand(source_func=lambda x: 1.0):
+
+
+    return f_val * 
 
 # Currently limited to f(x) = 1
 # Currently limited to 1D hat functions
-def compute_element_sources(el_vol:float) -> np.ndarray:
+def compute_element_sources(el_nds_crds:np.ndarray, source_func=lambda x:1.0) -> np.ndarray:
     """
     ## Purpose:
     Computes the (local) source vector for an element, based on its volume.
@@ -92,5 +73,15 @@ def compute_element_sources(el_vol:float) -> np.ndarray:
     | `el_srcs` |.....| `np.ndarray` |.....| Local, element-specific source/force vector |
     """
 
-    el_srcs = np.array([(el_vol / 2), (el_vol / 2)])
+    degree = len(el_nds_crds) - 1
+    el_num_nds = degree + 1
+
+    # Initialize element operator coefficients matrix
+    el_srcs = np.zeros(el_num_nds)
+
+    for el_srcs_i in range(el_num_nds):
+        func = lambda xi: element_sources_integrand(xi, el_srcs_i, el_nds_crds, source_func)
+        val, n_points_used = ref_els.adaptive_Gaussian_quadrature(func, np.array([[-1], [1]]))
+        el_srcs[el_srcs_i] = val
+    
     return el_srcs
