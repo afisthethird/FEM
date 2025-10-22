@@ -1,118 +1,118 @@
 # Libraries
 import numpy as np
-import matplotlib.pyplot as plt
-# Scripts
-from PYTHON.element_computes import compute_element_volume                   as comp_el_vol
-from PYTHON.element_computes import compute_element_operator_coefficients    as comp_el_op_coefs
-from PYTHON.element_computes import compute_element_sources                  as comp_el_srcs
-from PYTHON.boundary_conditions import BoundaryCondition as BC
-import PYTHON.mesh_generation as mesh_gen
+from abc import ABC, abstractmethod
 
-'''
-Abbreviations Used:
-    coef  : coefficient
-    num   : number
-    el    : element
-    nd    : node
-    var   : variable
-    crd   : coordinate
-    i     : index
-    is    : indices
-    val   : value
-    bc/BC : boundary condition
-    curr  : current
-    src   : source
-    op    : operator
-    vol   : volume
-    dim   : dimension
-    DE    : differential equation
-    deriv : derivative
-    glbl  : global
-    lcl   : local
-    comp  : compute
-    gen   : generate
-    usr   : user
-'''
 
-'''
-Variable Descriptions:
+class BoundaryCondition:
+    """
+    General (base) boundary condition class.
+    """
+    types_registry = {}
 
-    num_els          : Number of elements in the system
-    num_nds_per_el   : Number of nodes per element
-    num_vars_per_nd  : Number of variables stored per node
-        - Ex: storing temperature T and pressure P --> num_node_vars = 2
-        - Typically referred to as "degrees of freedom" in FEM codes
-    num_nds          : Number of nodes in the system
-    num_vars         : Total number of stored variables across all system nodes
+    def __init_subclass__(cls, type:str=None, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if type is not None:
+            if type in BoundaryCondition.types_registry:
+                raise ValueError(f"Duplicate boundary condition type: {type}")
+            BoundaryCondition.types_registry[type] = cls
 
-    glbl_nds_crds    : System nodal coordinate values
-    glbl_els_nds_is  : System-wide element-node connectivity matrix
-        - Each row specifies one element by index
-        - Each column specifies that element's nodes by index
-            - The first column specifies the start (min.) node
-            - The second column specifies the end (max.) node
+    def __init__(self, nds_glbl_is:np.ndarray, nds_vars_coefs:np.ndarray):
+        self.nds_glbl_is = nds_glbl_is
+        self.nds_vars_coefs = nds_vars_coefs
     
-    bc_nds_is        : Specifies by index the nodes with imposed boundary conditions
-    bc_nds_vars_vals : Specifies the imposed variable values at boundary nodes
-        - Each column holds the imposed nodal variable values for the bc_nodes node at the same colum index
+    @classmethod
+    def create(cls, type:str, nds_glbl_is:np.ndarray, nds_vars_coefs:np.ndarray):
+        """
+        ## Purpose:
+        User-facing method for creation of boundary conditions.
 
-    glbl_srcs        : System-level vector containing discretized source terms
-        - Represents external contributions (loads, heat generation, charge distribution, etc.) driving the system
-        - Typically referred to as the "force vector" in FEM codes
-    glbl_op_coefs    : System-level matrix containing discretized DE operator coefficients
-        - Relates nodal variables (unkowns) to source terms in the system
-        - Typically referred to as the "stiffness matrix" in FEM codes
-'''
+        ## Arguments:
+        *Boundary condition types **must** be spelled correctly.*
+        
+        All nodes specified by `nds_glbl_is` must have the same stored variables (ex. nodes may not be a mix of those that store temperature T and pressure P). Define separate boundary condition instances in cases where you have groups of nodes with mismatched variables.
+        | Name             |     | Data Type    |     | Description                                                                                                                                     |
+        |:-----------------|-----|:-------------|-----|:------------------------------------------------------------------------------------------------------------------------------------------------|
+        | `type`           |.....| `str`        |.....| Boundary condition type (ex. "Dirichlet")                                                                                                       |
+        | `nds_glbl_is`    |.....| `np.ndarray` |.....| Vector of node-specifying indices associated with this boundary condition                                                                       |
+        | `nds_vars_coefs` |.....| `np.ndarray` |.....| Array of coefficients specific to boundary condition type, used to calculate nodal variable values at that boundary. Shape: (num_nds, num_vars_per_nd) |
 
-# PDE specification
-usr_a_coef =  1
-usr_b_coef = -3
-usr_c_coef =  2
+        ## Returns:
+        A BoundaryCondition subclass instance (it's complicated).
+        """
 
-# Random crap, WIP
-glbl_nds_crds, glbl_els_nds_is = mesh_gen.mesh_line([(0.0,), (1.0,)], (4,))
-usr_nums_vars_per_nd = np.array([[1] for _ in range(len(glbl_nds_crds))]) # hacky
+        if type not in cls.types_registry:
+            raise ValueError(f"Unknown boundary condition type: {type}")
+        return cls.types_registry[type](nds_glbl_is, nds_vars_coefs)
 
-glbl_num_nds = len(glbl_nds_crds)
-glbl_num_els = len(glbl_els_nds_is)
-glbl_nds_vars_is = mesh_gen.gen_nds_vars_is(usr_nums_vars_per_nd, glbl_num_nds)
-glbl_num_vars = sum([curr_glbl_nd_vars_is.size for curr_glbl_nd_vars_is in glbl_nds_vars_is])
+    @abstractmethod
+    def apply(self, glbl_nds_vars_is:list, glbl_op_coefs:np.ndarray, glbl_srcs:np.ndarray) -> None:
+        """
+        ## Purpose:
+        Applies a boundary condition to the FEM system.
 
-# Boundary conditions --- need to automate instead of manually specifying index numbers, again, should be by user-specified region
-# Also need to update variable coefficients vector to a list (in line with custom numbers of variables per node)
-glbl_bcs = {
-    "left":  BC.create("Dirichlet", np.array([0])             , np.array([[0]])),
-    "right": BC.create("Dirichlet", np.array([glbl_num_nds-1]), np.array([[0]]))
-}
+        ## Arguments:
+        Enforced arguments for boundary condition application functions are:
+        | Name               |     | Data Type    |     | Description  |
+        |:-------------------|-----|:-------------|-----|:-------------|
+        | `glbl_nds_vars_is` |.....| `list`       |.....|              |
+        | `glbl_op_coefs`    |.....| `np.ndarray` |.....|              |
+        | `glbl_srcs`        |.....| `np.ndarray` |.....|              |
 
-# FEM matrices/vectors
-glbl_srcs = np.zeros([glbl_num_vars])
-glbl_op_coefs = np.zeros((glbl_num_vars, glbl_num_vars))
+        ## Returns:
+        Nothing.
+        """
 
-for curr_el_i in range(glbl_num_els): # not currently suited to anything other than 1D, need to lock down stucture of element-node connectivity matrix (is it a list of numpy row vectors? unsure.)
-    curr_el_nds_glbl_is = glbl_els_nds_is[curr_el_i]
-    curr_el_nds_vars_glbl_is = np.concatenate([glbl_nds_vars_is[curr_nd_glbl_i] for curr_nd_glbl_i in curr_el_nds_glbl_is])
+        pass
 
-    curr_el_nds_crds = glbl_nds_crds[curr_el_nds_glbl_is].reshape(-1, 1)
-    curr_el_vol = comp_el_vol(curr_el_nds_crds)
+    def for_each_node(self, func, glbl_nds_vars_is):
+        for curr_nd_glbl_i, curr_nd_vars_coefs in zip(self.nds_glbl_is, self.nds_vars_coefs):
+            curr_nd_vars_glbl_is = glbl_nds_vars_is[curr_nd_glbl_i]
+            func(curr_nd_vars_glbl_is, curr_nd_vars_coefs)
 
-    curr_el_op_coefs = comp_el_op_coefs(usr_a_coef, usr_b_coef, usr_c_coef, curr_el_vol)
-    curr_el_srcs = comp_el_srcs(curr_el_vol)
-
-    glbl_op_coefs[np.ix_(curr_el_nds_vars_glbl_is, curr_el_nds_vars_glbl_is)] += curr_el_op_coefs
-    glbl_srcs[curr_el_nds_vars_glbl_is] += curr_el_srcs.flatten()
-
-for curr_bc_region, curr_bc in glbl_bcs.items():
-    curr_bc.apply(glbl_nds_vars_is, glbl_op_coefs, glbl_srcs)
-soln = np.linalg.solve(glbl_op_coefs, glbl_srcs)
-soln = soln.flatten()
+#-----
+# Built-in boundary conditions
+#-----
 
 
-# Plot FEM vs exact solution
-plt.plot(glbl_nds_crds, soln, 'r-', linewidth=2, label='FEM')
-plt.xlabel('x')
-plt.ylabel('u(x)')
-plt.legend()
-plt.grid(True)
-plt.title('FEM Solution')
-plt.show()
+# Need to update to allow non-constant coefficients (probably supplied as sympy-created function handles?)
+# apply() will need to allow function handles as input and will also need to take nodal coordinates as input
+# also need to add support for non-hat weighting functions ):
+class Dirichlet(BoundaryCondition, type="Dirichlet"):  
+    """
+    u = const.
+    vars_coefs = [[c0], [c1], [c2]] to apply to all nodes with variablees [[v0], [v1], ...]
+    """
+    def apply(self, glbl_nds_vars_is:list, glbl_op_coefs:np.ndarray, glbl_srcs:np.ndarray):
+        def apply_at_node(vars_glbl_is, vars_coefs):
+            
+            for curr_var_glbl_i, curr_var_coef in zip(vars_glbl_is, vars_coefs):
+                glbl_op_coefs[curr_var_glbl_i, :              ] = 0.0 # hat weighting fn
+                glbl_op_coefs[curr_var_glbl_i, curr_var_glbl_i] = 1.0 # hat weighting fn
+                glbl_srcs[curr_var_glbl_i] = curr_var_coef
+        self.for_each_node(apply_at_node, glbl_nds_vars_is)
+
+class Neumann(BoundaryCondition, type="Neumann"):
+    """
+    u_n = const.
+    vars_coefs = [[c0], [c1], [c2]] to apply to all nodes with variablees [[v0], [v1], ...]
+    """
+    def apply(self, glbl_nds_vars_is:list, glbl_op_coefs:np.ndarray, glbl_srcs:np.ndarray):
+        def apply_at_node(vars_glbl_is, vars_coefs):
+            for curr_var_glbl_i, curr_var_coef in zip(vars_glbl_is, vars_coefs):
+                # assume hat weighting fns.
+                glbl_srcs[curr_var_glbl_i] += curr_var_coef
+        self.for_each_node(apply_at_node, glbl_nds_vars_is)
+
+class Robin(BoundaryCondition, type="Robin"):
+    """
+    alpha*u + beta*u_n = gamma
+    beta > 0, otherwise use Dirichlet BC
+    vars_coefs = [[[alpha0], [beta0], [gamma0]], [[alpha1], [beta1], [gamma1]], ...] for vars = [[v0], [v1], ...]
+    """
+    def apply(self, glbl_nds_vars_is:list, glbl_op_coefs:np.ndarray, glbl_srcs:np.ndarray):
+        def apply_at_node(vars_glbl_is, vars_coefs):
+            for (curr_var_glbl_i, curr_var_coefs) in zip(vars_glbl_is, vars_coefs):
+                alpha, beta, gamma = curr_var_coefs
+                glbl_op_coefs[curr_var_glbl_i, curr_var_glbl_i] += (alpha / beta)
+                glbl_srcs[curr_var_glbl_i] += (gamma / beta)
+        self.for_each_node(apply_at_node, glbl_nds_vars_is)
