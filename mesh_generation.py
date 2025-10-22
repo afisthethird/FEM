@@ -26,19 +26,18 @@ Tasks for curved boundaries/surfaces
 '''
 
 # uniform node spacing -- a lot of overlap with mesh_rectangle(), implies there should be object-oriented class structure here like with boundary conditions
-def mesh_line(ends_crds, nums_nds):
-    ends_crds = [np.array(curr_end_crds) for curr_end_crds in ends_crds]
+def mesh_line(bdry_nds_vec_crds:np.ndarray, nums_nds):
     num_nds_x, = nums_nds
 
     # Use minimum point as starting point for consistent mesh orientation
-    min_ends_crds_i = np.argmin([np.sum(curr_end_crds) for curr_end_crds in ends_crds])
-    ends_crds_ordered = ends_crds[min_ends_crds_i:] + ends_crds[:min_ends_crds_i]
+    min_bdry_nd_i = np.argmin([np.sum(curr_nd_vec_crds) for curr_nd_vec_crds in bdry_nds_vec_crds])
+    bdry_nds_vec_crds_ordered = np.concatenate((bdry_nds_vec_crds[min_bdry_nd_i:], bdry_nds_vec_crds[:min_bdry_nd_i]), axis=0)
 
     # Line vector definition
-    x_vec = ends_crds_ordered[1] - ends_crds_ordered[0]
+    x_vec = bdry_nds_vec_crds_ordered[1] - bdry_nds_vec_crds_ordered[0]
 
     # Nodal coordinate matrix & element-node connectivity matrix initialization
-    nds_crds = []
+    nds_vec_crds = []
     els_nds_is = []
 
     # 1D map from nodal coordinate grid position (nd_x_i) to end-result node index
@@ -50,8 +49,8 @@ def mesh_line(ends_crds, nums_nds):
         curr_nd_x_vec = (curr_nd_x_i / (num_nds_x-1)) * x_vec
 
         # Nodal coordinate
-        curr_nd_crds = ends_crds_ordered[0] + curr_nd_x_vec
-        nds_crds.append(curr_nd_crds)
+        curr_nd_vec_crd = bdry_nds_vec_crds_ordered[0] + curr_nd_x_vec
+        nds_vec_crds.append(curr_nd_vec_crd)
 
         # Nodal indexing
         nds_is[curr_nd_x_i] = num_nds_gend
@@ -64,26 +63,24 @@ def mesh_line(ends_crds, nums_nds):
             # Line elements
             els_nds_is.append([curr_nd0_i, curr_nd1_i])
 
-    nds_crds = np.array(nds_crds)
+    nds_vec_crds = np.array(nds_vec_crds)
     els_nds_is = np.array(els_nds_is)
-    print(els_nds_is)
-    return nds_crds, els_nds_is
+    return nds_vec_crds, els_nds_is
 
 # Planar rectangle with orthogonal (90*) edges
-def mesh_rectangle(corners_crds, nums_nds): # points are arranged in CCW order when looking down on rectangle in its plane
-    corners_crds = [np.array(curr_corner_crds) for curr_corner_crds in corners_crds]
+def mesh_rectangle(bdry_nds_vec_crds:np.ndarray, nums_nds): # points are arranged in CCW order when looking down on rectangle in its plane
     num_nds_x, num_nds_y = nums_nds
 
     # Use minimum point as starting point for consistent mesh orientation
-    min_corners_crds_i = np.argmin([np.sum(curr_corner_crds) for curr_corner_crds in corners_crds])
-    corners_crds_ordered = corners_crds[min_corners_crds_i:] + corners_crds[:min_corners_crds_i]
+    min_bdry_nd_i = np.argmin([np.sum(curr_corner_crds) for curr_corner_crds in bdry_nds_vec_crds])
+    bdry_nds_vec_crds_ordered = np.concatenate((bdry_nds_vec_crds[min_bdry_nd_i:], bdry_nds_vec_crds[:min_bdry_nd_i]), axis=0)
 
     # Rectangle edge vector definition
-    edge_x_vec = corners_crds_ordered[ 1] - corners_crds_ordered[0]
-    edge_y_vec = corners_crds_ordered[-1] - corners_crds_ordered[0]
+    edge_x_vec = bdry_nds_vec_crds_ordered[ 1] - bdry_nds_vec_crds_ordered[0]
+    edge_y_vec = bdry_nds_vec_crds_ordered[-1] - bdry_nds_vec_crds_ordered[0]
     
     # Nodal coordinate matrix & element-node connectivity matrix initialization
-    nds_crds = []
+    nds_vec_crds = []
     els_nds_is = []
 
     # 2D map from nodal coordinate grid position (nd_x_i, nd_y_i) to end-result node index
@@ -97,8 +94,8 @@ def mesh_rectangle(corners_crds, nums_nds): # points are arranged in CCW order w
             curr_nd_y_vec = (curr_nd_y_i / (num_nds_y-1)) * edge_y_vec
 
             # Nodal coordinate
-            curr_nd_crds = corners_crds_ordered[0] + curr_nd_x_vec + curr_nd_y_vec
-            nds_crds.append(curr_nd_crds)
+            curr_nd_vec_crd = bdry_nds_vec_crds_ordered[0] + curr_nd_x_vec + curr_nd_y_vec
+            nds_vec_crds.append(curr_nd_vec_crd)
 
             # Nodal indexing
             nds_is[curr_nd_x_i, curr_nd_y_i] = num_nds_gend
@@ -113,9 +110,9 @@ def mesh_rectangle(corners_crds, nums_nds): # points are arranged in CCW order w
                 # Rectangular elements
                 els_nds_is.append([curr_nd0_i, curr_nd1_i, curr_nd2_i, curr_nd3_i])
     
-    nds_crds = np.array(nds_crds)
+    nds_vec_crds = np.array(nds_vec_crds)
     els_nds_is = np.array(els_nds_is)
-    return nds_crds, els_nds_is
+    return nds_vec_crds, els_nds_is
 
 # returns a list of np.ndarrays, to avoid wasted space (numpy arrays must be regular)
 def gen_nds_vars_is(nums_vars_per_nd:np.ndarray, num_nds):
