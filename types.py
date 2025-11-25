@@ -152,7 +152,6 @@ NameType: TypeAlias = str
 
 
 # Runtime-usable extractions
-# Runtime-usable extractions
 RUNTIME_SYMBOLIC_SCALAR_VALUE_TYPE = extract_base_types(SymbolicScalarValueType)
 RUNTIME_SYMBOLIC_VECTOR_VALUE_TYPE = extract_base_types(SymbolicVectorValueType)
 RUNTIME_SYMBOLIC_MATRIX_VALUE_TYPE = extract_base_types(SymbolicMatrixValueType)
