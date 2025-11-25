@@ -6,15 +6,15 @@ from Code.types import *
 from Code.symbolic.space import R2, R2_ref
 from Code.symbolic.math import Expression, Argument
 from Code.symbolic.math import Derivative, Gradient, Divergence, Laplacian
-from Code.symbolic.geometry import BoundarySurface, Domain
+from Code.symbolic.geometry import Boundary, Domain
 
 
 x, y = R2.dims_syms()
 
-x_min_bdry = BoundarySurface('x_min', sp.Ge(x, -2), R2, Expression( 0))
-x_max_bdry = BoundarySurface('x_max', sp.Le(x,  2), R2, Expression(10))
-y_min_bdry = BoundarySurface('y_min', sp.Ge(y, -2), R2, Expression( 0))
-y_max_bdry = BoundarySurface('y_max', sp.Le(y,  2), R2, Expression( 0))
+x_min_bdry = Boundary('x_min', sp.Ge(x, -2), R2, Expression( 0))
+x_max_bdry = Boundary('x_max', sp.Le(x,  2), R2, Expression(10))
+y_min_bdry = Boundary('y_min', sp.Ge(y, -2), R2, Expression( 0))
+y_max_bdry = Boundary('y_max', sp.Le(y,  2), R2, Expression( 0))
 
 center_dom = Domain('center', [x_min_bdry, x_max_bdry, y_min_bdry, y_max_bdry], R2)
 
