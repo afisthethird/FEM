@@ -133,7 +133,7 @@ class Operator(SymbolicMathematicalObject, ABC):
         """
         Calling an `Operator` with a list of substitutions for its `Argument` placeholders returns its evaluation.
         The recursive evaluation control logic common to all concrete mathematical operators is contained in this function.
-        Specific evaluation logic is reserved for subclass implementation.
+        Specific evaluation logic is reserved for subclass implementations of `evaluate()`.
         
         Note that it is not meaningful to "call" or "evaluate" expressions or arguments, so the `Expression` and `Argument` classes have no such methods.
         Mathematical expressions are by definition already assembled/evaluated, and arguments are nothing but placeholders, so they can not be "called" or "evaluated" in the same sense as mathematical operators.
