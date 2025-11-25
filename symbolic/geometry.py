@@ -42,7 +42,7 @@ class CoordinateLocated(IntEnum):
 Mathematical Region Objects
 '''
 
-class BoundarySurface:
+class Boundary:
     """
     Essentially a wrapper for a SymPy `Expr` dictating the boundary in space, as a function of that `Space`'s dimensional symbols.
     Takes a SymPy relational object as input, and converts it to the standardized form for sign checking.
@@ -55,7 +55,6 @@ class BoundarySurface:
         name : NameType,
         eq : BoundaryRelationalType,
         host_spce : Space,
-        cndtn : SymbolicMathematicalObject,
         tol : NumericDecimalValueType = 1e-10
         ):
 
@@ -67,7 +66,6 @@ class BoundarySurface:
             self.host_spce.dims_syms(), 
             self.convert_equation_to_expression(eq)
             )
-        self.cndtn = cndtn
         self.tol = tol
 
     # Converts the user's input equation describing the boundary to a standard-form expression:
@@ -122,7 +120,7 @@ class BoundarySurface:
 class Domain:
 
     name : NameType
-    bdrys : List[BoundarySurface]
+    bdrys : List[Boundary]
     host_spce : Space
 
     def contains(
