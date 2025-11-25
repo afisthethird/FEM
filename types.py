@@ -3,7 +3,7 @@ import sympy as sp
 import numpy as np
 from typing import TypeAlias, TypeVar, ClassVar, Any
 from typing import Union, Annotated, Literal
-from typing import Self, Callable, List, Tuple, Dict
+from typing import Type, Self, Callable, List, Tuple, Dict
 from typing import get_origin, get_args
 
 
@@ -149,7 +149,14 @@ ValueType : TypeAlias = Union[
 # Non-numeric/symbolic common setup
 IndexType : TypeAlias = NumericIntegerValueType
 NameType: TypeAlias = str
+
+
 # Runtime-usable extractions
+# Runtime-usable extractions
+RUNTIME_SYMBOLIC_SCALAR_VALUE_TYPE = extract_base_types(SymbolicScalarValueType)
+RUNTIME_SYMBOLIC_VECTOR_VALUE_TYPE = extract_base_types(SymbolicVectorValueType)
+RUNTIME_SYMBOLIC_MATRIX_VALUE_TYPE = extract_base_types(SymbolicMatrixValueType)
+RUNTIME_SYMBOLIC_TENSOR_VALUE_TYPE = extract_base_types(SymbolicTensorValueType)
 RUNTIME_INDEX_TYPE = extract_base_types(IndexType)
 RUNTIME_NAME_TYPE = extract_base_types(NameType)
 
