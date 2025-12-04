@@ -2,8 +2,8 @@
 from abc import ABC
 from dataclasses import dataclass
 # Scripts
-from Code.types import *
-from Code.space.topological.connectivity import ConnectivityStructure, PointStructure, CurveStructure, SurfaceStructure, VolumeStructure
+from ...types import *
+from .connectivity import ConnectivityStructure, PointStructure, CurveStructure, SurfaceStructure, VolumeStructure
 
 
 '''

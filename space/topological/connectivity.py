@@ -1,7 +1,7 @@
 # Libraries
 from abc import ABC, abstractmethod
 # Scripts
-from Code.types import *
+from ...types import *
 
 
 '''
@@ -9,7 +9,7 @@ Script-specific typing setup
 '''
 
 if TYPE_CHECKING:
-    from Code.space.topological.base import CompactTopologicalSpace
+    from ..base import CompactTopologicalSpace
 
 
 '''

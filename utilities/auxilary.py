@@ -3,7 +3,7 @@ import sympy as sp
 import numpy as np
 from dataclasses import dataclass
 # Scripts
-from Code.types import *
+from ..types import *
 
 
 # Utility/wrapper class for storing values associated with symbols

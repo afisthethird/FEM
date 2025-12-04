@@ -1,9 +1,9 @@
 # Libraries
 from abc import ABC
 # Scripts
-from Code.types import *
-from Code.space.base import Space, Space0D, Space1D, Space2D, Space3D
-from Code.space.topological.connectivity import ConnectivityStructure, PointStructure, CurveStructure, SurfaceStructure, VolumeStructure
+from ...types import *
+from ..base import Space, Space0D, Space1D, Space2D, Space3D
+from .connectivity import ConnectivityStructure, PointStructure, CurveStructure, SurfaceStructure, VolumeStructure
 
 
 '''

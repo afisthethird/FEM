@@ -1,7 +1,7 @@
 # Libraries
 from abc import ABC
 # Scripts
-from Code.types import *
+from ..types import *
 
 
 class Space(ABC):
