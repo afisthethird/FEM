@@ -13,33 +13,6 @@ from Code.symbolic.space import Space, Dimension
 Script-specific typing setup
 '''
 
-@dataclass
-class Coordinate:
-
-    name : NameType
-    dims : Tuple[Dimension, ...]
-    vals : Tuple[ScalarValueType]
-
-    def __getitem__(
-        self, 
-        key : Union[IndexType, Dimension]
-        ) -> NumericValueType:
-
-        result_idx = None
-        if isinstance(key, IndexType):
-            result = self.vals[key]
-        elif isinstance(key, Dimension):
-            result_idx = self.dims.index(key)
-        
-        result = None
-        if result_idx is not None:
-            result = self.vals[result_idx]
-        
-        return result
-    
-    def __len__(self):
-
-        return len(self.dims)
 
 @dataclass
 class Node:

@@ -3,32 +3,42 @@ import sympy as sp
 import numpy as np
 # Scripts
 from Code.types import *
-from Code.symbolic.space import R2, R2_ref
+from Code.symbolic.space import R2
 from Code.symbolic.math import Expression, Argument
 from Code.symbolic.math import Derivative, Gradient, Divergence, Laplacian
 from Code.symbolic.geometry import Boundary, Domain
+from Code.fem.equation import GoverningEquation
 
 
 x, y = R2.dims_syms()
 
-x_min_bdry = Boundary('x_min', sp.Ge(x, -2), R2, Expression( 0))
-x_max_bdry = Boundary('x_max', sp.Le(x,  2), R2, Expression(10))
-y_min_bdry = Boundary('y_min', sp.Ge(y, -2), R2, Expression( 0))
-y_max_bdry = Boundary('y_max', sp.Le(y,  2), R2, Expression( 0))
+x_min_bdry = Boundary('x_min', sp.Ge(x, 0.0), R2)
+x_max_bdry = Boundary('x_max', sp.Le(x, 1.0), R2)
+y_min_bdry = Boundary('y_min', sp.Ge(y, 0.0), R2)
+y_max_bdry = Boundary('y_max', sp.Le(y, 1.0), R2)
 
 center_dom = Domain('center', [x_min_bdry, x_max_bdry, y_min_bdry, y_max_bdry], R2)
 
-test_crd = np.array([0, 0])
-print(center_dom.contains(test_crd))
+V = Argument('V')
+ρ = 0.0
+ɛ0 = 8.8541878188e-12 # vacuum
+ɛr = 1.0 # Air
+ɛ = ɛr/ɛ0
 
-a = Expression(1)
-b = Expression(sp.Matrix([2, 2]))
-c = Expression(sp.sin(x) * sp.sin(y))
-u = Argument('u')
+op = Laplacian(V, R2)
+src = Expression(-ρ / ɛ)
 
-L = a*Laplacian(u, R2) + b.dot(Gradient(u, R2)) + c*u
+eqn = GoverningEquation(
+    name = 'Poisson',
+    op = op,
+    src = src,
+    host_spce = R2
+    )
 
-u_sub = sp.Function('u')(x, y)
-L_eval = L({u : u_sub})[0]
-sp.pprint(L_eval)
+w = Argument('w')
+eqn.construct_weak_form_integrands(wghtng_plchldr = w)
 
+V_sub = sp.Function('V')(x, y)
+w_sub = sp.Function('w')(x, y)
+sp.pprint(eqn.weak_form_op_intgrnd({V: V_sub, w: w_sub})[0])
+sp.pprint(eqn.weak_form_src_intgrnd({w: w_sub})[0])

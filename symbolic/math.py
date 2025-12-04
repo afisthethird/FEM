@@ -33,6 +33,8 @@ Abstract Mathematical Object Superclasses
 class SymbolicMathematicalObject(ABC):
 
     # Automatic composition
+    def __neg__(self):
+        return Negation(self)
     def __add__(self, other: OperandInputType):
         return Sum(self, other)
     def __radd__(self, other: OperandInputType):
@@ -45,6 +47,10 @@ class SymbolicMathematicalObject(ABC):
         return ScalarMultiplication(self, other)
     def __rmul__(self, other: OperandInputType):
         return ScalarMultiplication(other, self)
+    def __truediv__(self, other: OperandInputType):
+        return ScalarDivision(self, other)
+    def __rtruediv__(self, other: OperandInputType):
+        return ScalarDivision(other, self)
     def dot(self, other: OperandInputType):
         return DotProduct(self, other)
     def __matmul__(self, other: OperandInputType):
@@ -262,6 +268,20 @@ class ScalarMultiplication(BinaryOperator):
         result = evald_oprnds[0] * evald_oprnds[1]
         return (result,)
 
+# Technically redundant due to ScalarMultiplication, but VERY convenient
+class ScalarDivision(BinaryOperator):
+    
+    def evaluate(
+        self, 
+        evald_oprnds : Union[
+            Tuple[SymbolicScalarValueType, SymbolicValueType], 
+            Tuple[SymbolicValueType, SymbolicScalarValueType]
+            ]
+        ) -> Tuple[SymbolicValueType]:
+
+        result = evald_oprnds[0] / evald_oprnds[1]
+        return (result,)
+
 class DotProduct(BinaryOperator):
 
     def evaluate(
@@ -287,6 +307,17 @@ class MatrixProduct(BinaryOperator):
 '''
 Unary Operators
 '''
+
+class Negation(UnaryOperator):
+    
+    def evaluate(
+        self,
+        evald_oprnd : Tuple[SymbolicValueType]    
+        ) -> Tuple[SymbolicValueType]:
+
+        result = -evald_oprnd[0]
+        
+        return (result,)
 
 class Derivative(UnaryOperator):
 

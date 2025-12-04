@@ -14,16 +14,19 @@ class GoverningEquation():
     def __init__(
         self,
         name : NameType,
-        op : Operator,
-        src : Expression,
+        strong_op : Operator,
+        strong_src : Expression,
         host_spce : PhysicalSpace
         ):
 
         self.name = name
-        self.op = op
-        self.src = src
+        self.strong_op = strong_op
+        self.strong_src = strong_src
         self.host_spce = host_spce
         self.host_spce.create_reference_space()
+
+        self.weak_op_intgrnd = None
+        self.weak_src_intgrnd = None
     
     def construct_weak_form_integrands(
         self,
@@ -35,13 +38,9 @@ class GoverningEquation():
         The weighting functions serve to enforce equality at a local level: `∫((L(u)-f)·w)dΩ = 0`.
         """
 
-        # Bookkeeping definitions
-        strong_form_op = self.op
-        strong_form_src = self.src
-
         # Conversion
-        self.weak_form_op_intgrnd = strong_form_op * wghtng_plchldr
-        self.weak_form_src_intgrnd = strong_form_src * wghtng_plchldr
+        self.weak_op_intgrnd = self.strong_op * wghtng_plchldr
+        self.weak_src_intgrnd = self.strong_src * wghtng_plchldr
     
     def perform_integration_by_parts(
         self,
@@ -57,7 +56,16 @@ class GoverningEquation():
         -   `∫(∇u·vŜ)dS` is known as the "boundary" term because it is only defined at physical domain boundaries. There is physical meaning associated with integration by parts.
         """
         
-        return NotImplementedError
+        # Can't transform an expression that doesn't yet exist
+        if (self.weak_op_intgrnd is None) or (self.weak_src_intgrnd is None):
+            raise AttributeError("Weak form integrands have not yet been generated, so transformation to weak form is not possible.")
+
+        # Convenience
+        weak_op_intgrnd = self.weak_op_intgrnd
+        weak_src_intgrnd = self.weak_src_intgrnd
+
+        
+
         
 
 # Volume term: -∫(∇u·∇v)dΩ

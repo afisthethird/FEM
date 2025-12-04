@@ -1,9 +1,10 @@
 # Libraries
 import sympy as sp
 import numpy as np
+from typing import TYPE_CHECKING
 from typing import TypeAlias, TypeVar, ClassVar, Any
 from typing import Union, Annotated, Literal
-from typing import Type, Self, Callable, List, Tuple, Dict
+from typing import Type, Self, Callable, List, Tuple, Dict, Set
 from typing import get_origin, get_args
 
 
@@ -31,8 +32,8 @@ def extract_base_types(type_obj : Any) -> Tuple[type, ...]:
 
 
 # Shape setup
-RowVectorValueShape    : TypeAlias = Literal["(m, 1)"]
-ColumnVectorValueShape : TypeAlias = Literal["(1, n)"]
+RowVectorValueShape    : TypeAlias = Literal["(1, n)"] # Row vectors have a single row
+ColumnVectorValueShape : TypeAlias = Literal["(m, 1)"] # Column vectors have a single column
 VectorValueShape       : TypeAlias = Union[
     RowVectorValueShape,
     ColumnVectorValueShape
@@ -126,9 +127,17 @@ ScalarValueType : TypeAlias = Union[
     SymbolicScalarValueType, 
     NumericScalarValueType
     ]
+RowVectorValueType : TypeAlias = Union[
+    SymbolicRowVectorValueType,
+    NumericRowVectorValueType
+    ]
+ColumnVectorValueType : TypeAlias = Union[
+    SymbolicColumnVectorValueType,
+    NumericColumnVectorValueType
+    ]
 VectorValueType : TypeAlias = Union[
-    SymbolicVectorValueType,
-    NumericVectorValueType
+    RowVectorValueType,
+    ColumnVectorValueType
     ]
 MatrixValueType : TypeAlias = Union[
     SymbolicMatrixValueType,
